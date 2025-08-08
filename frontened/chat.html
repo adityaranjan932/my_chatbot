@@ -515,29 +515,9 @@
             showTypingIndicator();
 
             try {
-                // Call API
-                const response = await fetch(`${API_BASE_URL}/query`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        question: message
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const data = await response.json();
+                // Use streaming endpoint for better user experience
+                await sendStreamingMessage(message);
                 
-                // Hide typing indicator
-                hideTypingIndicator();
-
-                // Add bot response
-                addMessage(data.answer, 'bot', data.sources);
-
             } catch (error) {
                 console.error('Error:', error);
                 hideTypingIndicator();
@@ -549,6 +529,123 @@
                     null,
                     true
                 );
+            }
+        }
+
+        async function sendStreamingMessage(message) {
+            const response = await fetch(`${API_BASE_URL}/query/stream`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    question: message
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            // Hide typing indicator and prepare for streaming
+            hideTypingIndicator();
+            
+            // Create bot message container
+            const messageDiv = createBotMessageContainer();
+            const messageContent = messageDiv.querySelector('.message-content');
+            const contentDiv = messageContent.querySelector('.content-area');
+            
+            let fullAnswer = '';
+            let sources = [];
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+
+            try {
+                while (true) {
+                    const { done, value } = await reader.read();
+                    
+                    if (done) break;
+                    
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n');
+                    
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const data = JSON.parse(line.slice(6));
+                                
+                                if (data.type === 'start') {
+                                    sources = data.sources;
+                                } else if (data.type === 'word') {
+                                    fullAnswer += data.content;
+                                    // Format and update content in real-time
+                                    const formattedContent = formatBotResponse(fullAnswer);
+                                    contentDiv.innerHTML = formattedContent;
+                                    scrollToBottom();
+                                } else if (data.type === 'complete') {
+                                    // Add sources after completion
+                                    addSourcesToMessage(messageContent, sources);
+                                    scrollToBottom();
+                                } else if (data.type === 'error') {
+                                    throw new Error(data.message);
+                                }
+                            } catch (e) {
+                                console.error('Error parsing stream data:', e);
+                            }
+                        }
+                    }
+                }
+            } finally {
+                reader.releaseLock();
+            }
+        }
+
+        function createBotMessageContainer() {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message bot';
+            messageCount++;
+
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = '🤖';
+
+            const messageContent = document.createElement('div');
+            messageContent.className = 'message-content';
+            messageContent.innerHTML = '<div class="content-area"></div>';
+
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(messageContent);
+
+            // Remove welcome message if it exists
+            const welcomeMessage = chatMessages.querySelector('.welcome-message');
+            if (welcomeMessage && messageCount === 1) {
+                welcomeMessage.remove();
+            }
+
+            chatMessages.appendChild(messageDiv);
+            scrollToBottom();
+            
+            return messageDiv;
+        }
+
+        function addSourcesToMessage(messageContent, sources) {
+            if (sources && sources.length > 0) {
+                const sourcesDiv = document.createElement('div');
+                sourcesDiv.className = 'sources';
+                sourcesDiv.innerHTML = '<h4>📚 Sources:</h4>';
+                
+                sources.forEach(source => {
+                    const sourceItem = document.createElement('div');
+                    sourceItem.className = 'source-item';
+                    sourceItem.innerHTML = `
+                        <strong>${source.source}</strong><br>
+                        <small>${source.content_preview}</small>
+                    `;
+                    sourcesDiv.appendChild(sourceItem);
+                });
+                
+                messageContent.appendChild(sourcesDiv);
             }
         }
 

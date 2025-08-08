@@ -1,0 +1,37 @@
+# FastAPI and web server dependencies
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+
+# LangChain and AI dependencies
+langchain==0.1.0
+langchain-community==0.0.13
+langchain-google-genai==0.0.6
+google-generativeai==0.3.2
+
+# Vector database
+chromadb==0.4.22
+
+# Document processing
+pypdf==3.17.4
+unstructured[pdf]==0.11.8
+python-magic-bin==0.4.14
+libmagic==1.0
+
+# Data processing and utilities
+pydantic==2.5.3
+python-dotenv==1.0.0
+numpy==1.24.4
+pandas==2.1.4
+
+# Additional dependencies for document loaders
+beautifulsoup4==4.12.2
+lxml==4.9.4
+requests==2.31.0
+
+# System dependencies
+typing-extensions==4.9.0
+aiofiles==0.24.0
+
+# For deployment
+gunicorn==21.2.0
