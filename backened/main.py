@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import os
 import sys
-from typing import Dict, List
+from typing import Dict, List, Optional
 from contextlib import asynccontextmanager
 
 from src.llm.model import create_qa_chain
