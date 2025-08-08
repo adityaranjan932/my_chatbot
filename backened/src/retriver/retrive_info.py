@@ -16,15 +16,21 @@ def load_retriever():
     # Reuse the same embedding model
     embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
 
-    # Check if Chroma DB directory exists
-    if not os.path.exists(CHROMA_DIR):
-        raise FileNotFoundError(f"Chroma DB directory not found at: {CHROMA_DIR}")
+    # Create Chroma DB directory if it doesn't exist
+    os.makedirs(CHROMA_DIR, exist_ok=True)
 
-    # Load the existing vector store
-    vectorstore = Chroma(
-        persist_directory=CHROMA_DIR,
-        embedding_function=embeddings
-    )
+    try:
+        # Try to load existing vector store
+        vectorstore = Chroma(
+            persist_directory=CHROMA_DIR,
+            embedding_function=embeddings
+        )
+    except Exception as e:
+        # If loading fails, create a new empty vector store
+        vectorstore = Chroma(
+            persist_directory=CHROMA_DIR,
+            embedding_function=embeddings
+        )
     
     # Get the retriever
     retriever = vectorstore.as_retriever(
