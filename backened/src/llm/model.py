@@ -1,11 +1,9 @@
-# from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate
-# from langchain.chains import RetrievalQA
-# from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
+from langchain_core.runnables import RunnablePassthrough
+from langchain_community.chat_models import ChatGoogleGenerativeAI
+from langchain_core.output_parsers import StrOutputParser
 
-
-# from ..retriver.retrive_info import load_retriever
-
-
+from ..retriver.retrive_info import load_retriever
 
 def create_qa_chain():
     """
@@ -35,7 +33,7 @@ Question: {question}
 Answer:"""
 
     prompt = ChatPromptTemplate.from_messages([
-        SystemMessagePromletTemplate.from_template(system_template),
+        SystemMessagePromptTemplate.from_template(system_template),
         HumanMessagePromptTemplate.from_template("{question}")
     ])
 
